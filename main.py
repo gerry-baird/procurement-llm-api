@@ -18,8 +18,8 @@ class Query(BaseModel):
     question: str
 
 class Query_Response(BaseModel):
-    question: str
-    response: str
+    message: str
+
 
 @app.get("/")
 async def root():
@@ -60,6 +60,6 @@ async def question(q: Query):
     final_state = agent_executor.invoke({"messages": question})
     res = final_state["messages"][-1].content
 
-    query_response = Query_Response(question=question, response=res)
+    query_response = Query_Response(message=res)
 
     return query_response

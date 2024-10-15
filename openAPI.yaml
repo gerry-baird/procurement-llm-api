@@ -1,0 +1,78 @@
+openapi: 3.0.0
+info:
+  title: Procurement Query
+  description: Procurement query services
+  version: 0.1.0
+servers:
+  - url: https://procurement-llm-api.onrender.com
+paths:
+  /question:
+    post:
+      summary: Procurement queries
+      description: Query the procurement system
+      operationId: procurement_question
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Query"
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HTTPValidationError"
+      security:
+        - HTTPBasic: []
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            "$ref": "#/components/schemas/ValidationError"
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    Query:
+      properties:
+        question:
+          type: string
+          title: Question
+      type: object
+      required:
+      - question
+      title: Query
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBasic:
+      type: http
+      scheme: basic
