@@ -18,7 +18,7 @@ class Query(BaseModel):
     question: str
 
 class Query_Response(BaseModel):
-    message: str
+    result : str
 
 
 @app.get("/")
@@ -40,12 +40,8 @@ To start you should ALWAYS look at the tables in the database to see what you ca
 Do NOT skip this step.
 Then you should query the schema of the most relevant tables."""
 
-
-
-
-
 @app.post("/question")
-async def question(q: Query):
+async def question(q: Query) -> Query_Response:
     question = q.question
     system_message = SystemMessage(content=SQL_PREFIX)
 
@@ -60,6 +56,6 @@ async def question(q: Query):
     final_state = agent_executor.invoke({"messages": question})
     res = final_state["messages"][-1].content
 
-    query_response = Query_Response(message=res)
+    query_response = Query_Response(result=res)
 
     return query_response

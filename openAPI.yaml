@@ -22,7 +22,8 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                "$ref": "#/components/schemas/Query_Response"
         '422':
           description: Validation Error
           content:
@@ -51,6 +52,15 @@ components:
       required:
       - question
       title: Query
+    Query_Response:
+      properties:
+        result:
+          type: string
+          title: Result
+      type: object
+      required:
+        - result
+      title: Query_Response
     ValidationError:
       properties:
         loc:
