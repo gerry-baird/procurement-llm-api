@@ -1,16 +1,27 @@
 import os
 
-from fastapi import FastAPI
-from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from langchain_community.utilities import SQLDatabase
-from langchain_core.messages import SystemMessage
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from langgraph.prebuilt import create_react_agent
+from fastapi import FastAPI
 
-from langchain_openai import ChatOpenAI
+from langchain_community.utilities import SQLDatabase
+from langchain_community.agent_toolkits import create_sql_agent
+from langchain_ibm import WatsonxLLM
 
 load_dotenv()
+
+credentials = {
+    "url": "https://us-south.ml.cloud.ibm.com",
+    "apikey": os.environ['WATSONX_API_KEY'],
+    "project_id": os.environ['WATSON_ML_PROJECT']
+}
+
+model_param = {
+    "decoding_method": "greedy",
+    "temperature": 0,
+    "min_new_tokens": 5,
+    "max_new_tokens": 500
+    }
 
 app = FastAPI()
 
@@ -20,41 +31,26 @@ class Query(BaseModel):
 class Query_Response(BaseModel):
     result : str
 
-
-@app.get("/")
-async def root():
-    return {"message": "Hello Render"}
-
-SQL_PREFIX = """You are an agent designed to interact with a SQL database.
-Given an input question, create a syntactically correct Postgres query to run, then look at the results of the query and return the answer.
-Unless the user specifies a specific number of examples they wish to obtain, always limit your query to at most 5 results.
-You can order the results by a relevant column to return the most interesting examples in the database.
-Never query for all the columns from a specific table, only ask for the relevant columns given the question.
-You have access to tools for interacting with the database.
-Only use the below tools. Only use the information returned by the below tools to construct your final answer.
-You MUST double check your query before executing it. If you get an error while executing a query, rewrite the query and try again.
-
-DO NOT make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the database.
-
-To start you should ALWAYS look at the tables in the database to see what you can query.
-Do NOT skip this step.
-Then you should query the schema of the most relevant tables."""
-
 @app.post("/question")
 async def question(q: Query) -> Query_Response:
     question = q.question
-    system_message = SystemMessage(content=SQL_PREFIX)
 
     db = SQLDatabase.from_uri(os.environ['DB_URL'])
     print(db.dialect)
     print(db.get_usable_table_names())
-    llm = ChatOpenAI(model="gpt-4o-mini")
-    toolkit = SQLDatabaseToolkit(db=db, llm=llm)
-    tools = toolkit.get_tools()
 
-    agent_executor = create_react_agent(llm, tools, messages_modifier=system_message)
-    final_state = agent_executor.invoke({"messages": question})
-    res = final_state["messages"][-1].content
+    llm = WatsonxLLM(
+        model_id="meta-llama/llama-3-405b-instruct",
+        url=credentials.get("url"),
+        apikey=credentials.get("apikey"),
+        project_id=credentials.get("project_id"),
+        params=model_param
+    )
+
+    agent_executor = create_sql_agent(llm, db=db, verbose=True, handle_parsing_errors=True)
+
+    final_state = agent_executor.invoke(question)
+    res = final_state["output"]
 
     query_response = Query_Response(result=res)
 
