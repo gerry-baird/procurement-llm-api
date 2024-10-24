@@ -35,6 +35,9 @@ class Query_Response(BaseModel):
 async def question(q: Query) -> Query_Response:
     question = q.question
 
+    print("Hi Ryan")
+    print(question)
+
     db = SQLDatabase.from_uri(os.environ['DB_URL'])
     print(db.dialect)
     print(db.get_usable_table_names())
