@@ -35,15 +35,18 @@ class Query_Response(BaseModel):
 async def question(q: Query) -> Query_Response:
     question = q.question
 
-    print("Hi Ryan")
+    print("Questions")
     print(question)
 
     db = SQLDatabase.from_uri(os.environ['DB_URL'])
     print(db.dialect)
     print(db.get_usable_table_names())
 
+    # model_id = "meta-llama/llama-3-405b-instruct"
+    model_id = "meta-llama/llama-3-2-90b-vision-instruct"
+
     llm = WatsonxLLM(
-        model_id="meta-llama/llama-3-405b-instruct",
+        model_id=model_id,
         url=credentials.get("url"),
         apikey=credentials.get("apikey"),
         project_id=credentials.get("project_id"),
